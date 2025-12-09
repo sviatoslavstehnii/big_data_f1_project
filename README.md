@@ -92,8 +92,7 @@ flowchart LR
     O1[01_f1_ingest_bronze]
     O2[02_f1_transform_silver]
     O3[03_f1_build_gold]
-    O4[(Optional) 04_f1_streaming_lap_times]
-    O5[f1_pipeline_driver]
+    O4[f1_pipeline_driver]
   end
 
   %% Sources to Bronze
