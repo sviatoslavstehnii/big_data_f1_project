@@ -1,9 +1,9 @@
-# Formula 1 Data Processing Pipeline (Bronze–Silver–Gold)
+# Formula 1 Big Data Projetc
 
 ## 1. Overview
 
 This project implements an end-to-end **data processing pipeline** for the
-**Formula 1 World Championship (1950–20XX)** dataset using **PySpark on Databricks**.
+**Formula 1 World Championship (1950–2025)** dataset using **PySpark on Databricks**.
 
 The pipeline follows a **Lakehouse / Medallion** architecture:
 
@@ -11,25 +11,6 @@ The pipeline follows a **Lakehouse / Medallion** architecture:
 - **Silver** → cleaned, joined, analytics-ready tables  
 - **Gold** → feature-engineered tables for analysis and ML
 
-It covers the **Deliverable 1: Data Processing Pipeline** requirements:
-
-- **Data Ingestion**
-  - Batch ingestion from CSVs
-  - Optional simulated streaming ingestion for lap times
-  - Error handling & data validation with quarantine tables
-- **Data Storage**
-  - Databricks **DBFS + Delta Lake** (no S3 required)
-  - Clear Bronze / Silver / Gold layers
-  - Partitioning strategy by `season` (and `raceId` where needed)
-- **Data Processing & Transformation**
-  - Cleaning and preprocessing
-  - Handling missing values and data quality issues
-  - Feature engineering and enrichment in PySpark
-- **Pipeline Orchestration**
-  - Databricks **Workflows (Jobs)** to automate notebook execution
-  - Optional scheduling & monitoring via the Jobs UI
-
----
 
 ## 2. Architecture Diagram (Data Flow)
 
@@ -53,22 +34,7 @@ flowchart LR
   end
 
   subgraph Bronze["Bronze Layer (Raw Delta)"]
-    B1[f1_bronze_races]
-    B2[f1_bronze_drivers]
-    B3[f1_bronze_constructors]
-    B4[f1_bronze_results]
-    B5[f1_bronze_sprint_results]
-    B6[f1_bronze_lap_times]
-    B7[f1_bronze_pit_stops]
-    B8[f1_bronze_qualifying]
-    B9[f1_bronze_driver_standings]
-    B10[f1_bronze_constructor_standings]
-    B11[f1_bronze_circuits]
-    B12[f1_bronze_seasons]
-    B13[f1_bronze_status]
-    Berr1[f1_invalid_results]
-    Berr2[f1_invalid_sprint_results]
-    Berr3[f1_invalid_lap_times]
+    B1[f1_bronze_data]
   end
 
   subgraph Silver["Silver Layer (Cleaned & Joined)"]
@@ -111,36 +77,10 @@ flowchart LR
   A13 --> O1
 
   O1 --> B1
-  O1 --> B2
-  O1 --> B3
-  O1 --> B4
-  O1 --> B5
-  O1 --> B6
-  O1 --> B7
-  O1 --> B8
-  O1 --> B9
-  O1 --> B10
-  O1 --> B11
-  O1 --> B12
-  O1 --> B13
-  O1 --> Berr1
-  O1 --> Berr2
-  O1 --> Berr3
+
 
   %% Bronze to Silver
   B1 --> O2
-  B2 --> O2
-  B3 --> O2
-  B4 --> O2
-  B5 --> O2
-  B6 --> O2
-  B7 --> O2
-  B8 --> O2
-  B9 --> O2
-  B10 --> O2
-  B11 --> O2
-  B12 --> O2
-  B13 --> O2
 
   O2 --> S1
   O2 --> S2
