@@ -35,6 +35,7 @@ flowchart LR
 
   subgraph Bronze["Bronze Layer (Raw Delta)"]
     B1[f1_bronze_data]
+    B2[...]
   end
 
   subgraph Silver["Silver Layer (Cleaned & Joined)"]
@@ -42,10 +43,7 @@ flowchart LR
     S2[f1_silver_sprint_results]
     S3[f1_silver_lap_times]
     S4[f1_silver_pit_stops]
-    S5[f1_silver_qualifying]
-    S6[f1_silver_driver_standings]
-    S7[f1_silver_constructor_standings]
-    S8[f1_silver_seasons]
+    S5[...]
   end
 
   subgraph Gold["Gold Layer (Feature Engineered)"]
@@ -77,19 +75,20 @@ flowchart LR
   A13 --> O1
 
   O1 --> B1
+  O1 --> B2
+
 
 
   %% Bronze to Silver
   B1 --> O2
+  B2 --> O2
 
   O2 --> S1
   O2 --> S2
   O2 --> S3
   O2 --> S4
   O2 --> S5
-  O2 --> S6
-  O2 --> S7
-  O2 --> S8
+
 
   %% Silver to Gold
   S1 --> O3
@@ -97,8 +96,7 @@ flowchart LR
   S3 --> O3
   S4 --> O3
   S5 --> O3
-  S6 --> O3
-  S7 --> O3
+
 
   O3 --> G1
   O3 --> G2
