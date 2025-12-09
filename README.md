@@ -107,7 +107,6 @@ flowchart LR
 
   %% Orchestration driver
   O1 --> O2 --> O3
-  O4 -. optional .- O3
 
   G1 -->|"EDA, reports"| Users
   G2 -->|"Team analytics"| Users
