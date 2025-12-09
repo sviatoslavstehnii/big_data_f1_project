@@ -104,8 +104,6 @@ flowchart LR
   O3 --> G2
   O3 --> G3
 
-  %% Streaming (optional)
-  A6 -. streaming lap csv .-> O4 -.-> B6
 
   %% Orchestration driver
   O1 --> O2 --> O3
