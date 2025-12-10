@@ -1,0 +1,22 @@
+{
+    "mcpServers": {
+      "f1-databricks": {
+        "command": "uv",
+        "args": [
+          "run",
+          "--directory",
+          "/Users/tlysu/Documents/test/big-data-project/mcp_server",
+          "f1-mcp"
+        ],
+        "env": {
+          "DATABRICKS_HOST": "https://dbc-6a8f2b04-caf2.cloud.databricks.com",
+          "DATABRICKS_TOKEN": "",
+          "DATABRICKS_WAREHOUSE_ID": "9e0afefb5d56c6d3",
+          "DATABRICKS_CATALOG": "workspace",
+          "DATABRICKS_SCHEMA": "f1"
+        }
+      }
+    }
+  }
+  
+  
