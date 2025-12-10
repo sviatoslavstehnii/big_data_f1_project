@@ -200,33 +200,6 @@ Once connected, you can ask Claude questions like:
 - `f1.f1_silver_qualifying` - Qualifying results
 - `f1.f1_silver_driver_standings` - Championship standings
 
-## Extending the ML Model
-
-The `predict_pit_stops` tool is a placeholder. To integrate your trained model:
-
-1. Edit `src/f1_mcp/services/model_service.py`
-
-2. Load your model in `__init__`:
-```python
-def __init__(self):
-    self._model = load_your_model()  # Add your model loading
-    self._model_loaded = True
-    self._model_version = "your-model-v1.0"
-```
-
-3. Replace placeholder logic in prediction methods:
-```python
-def predict_optimal_pit_count(self, ...):
-    features = prepare_features(...)  # Your feature engineering
-    prediction = self._model.predict(features)  # Your model inference
-    return PitStopPrediction(
-        prediction_type=PredictionType.OPTIMAL_PIT_COUNT,
-        optimal_pit_count=prediction,
-        confidence=0.85,  # Your confidence calculation
-        model_version=self._model_version,
-        message="Prediction from trained model",
-    )
-```
 
 ## Project Structure
 
@@ -244,7 +217,6 @@ mcp_server/
 │       │   ├── sql_tools.py    # SQL query execution tools
 │       │   ├── schema_tools.py # Schema/table discovery tools
 │       │   ├── visualization_tools.py  # Charting tools
-│       │   └── ml_tools.py     # ML prediction placeholders
 │       ├── services/
 │       │   ├── databricks_client.py  # Databricks SDK wrapper
 │       │   ├── chart_service.py      # Matplotlib chart generation

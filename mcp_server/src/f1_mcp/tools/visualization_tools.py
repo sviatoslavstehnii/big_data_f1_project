@@ -12,23 +12,15 @@ from f1_mcp.services.databricks_client import get_databricks_client
 from f1_mcp.services.chart_service import get_chart_service
 
 
-# Default directory for saved charts (relative to current working directory)
 CHARTS_OUTPUT_DIR = Path("./f1_charts")
 
 
 def register_visualization_tools(mcp: FastMCP) -> None:
-    """Register visualization tools with the MCP server.
-
-    Args:
-        mcp: The FastMCP server instance.
-    """
-
     def _save_chart_if_requested(
         chart_base64: str,
         save_to_file: bool,
         filename: Optional[str] = None,
     ) -> Optional[dict[str, Any]]:
-        """Helper to save chart to disk if requested."""
         if not save_to_file:
             return None
         
@@ -66,19 +58,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         save_to_file: bool = True,
         filename: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Create a chart showing driver performance over seasons.
-
-        Args:
-            driver_name: Name of the driver (partial match supported).
-            metric: Metric to chart - 'total_points', 'wins', 'podiums', 
-                   'avg_finish_position', 'dnf_count'.
-            chart_type: 'line' or 'bar'.
-            save_to_file: If True, automatically saves chart to ./f1_charts/
-            filename: Optional filename for saved chart.
-
-        Returns:
-            Chart metadata. If save_to_file=True, includes file_path.
-        """
         valid_metrics = [
             "total_points", "wins", "podiums", 
             "avg_finish_position", "dnf_count", "races_count"
@@ -115,7 +94,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": f"No data found for driver matching '{driver_name}'",
             }
 
-        # Extract data for charting
         actual_driver_name = rows[0].get("driverName", driver_name)
         seasons = [r.get("season") for r in rows]
         values = [float(r.get(metric, 0) or 0) for r in rows]
@@ -139,7 +117,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 ylabel=metric.replace("_", " ").title(),
             )
 
-        # Auto-save if requested
         chart_dict = chart_result.to_dict()
         save_result = _save_chart_if_requested(
             chart_dict["chart_base64"],
@@ -147,7 +124,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             filename or f"{actual_driver_name.replace(' ', '_')}_{metric}",
         )
         
-        # Don't return base64 if saved (too large for context)
         response = {
             "success": True,
             "driver": actual_driver_name,
@@ -174,18 +150,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         save_to_file: bool = True,
         filename: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Create a chart comparing multiple teams.
-
-        Args:
-            team_names: List of team names to compare.
-            season: Optional specific season (if None, shows latest 5 seasons).
-            metric: Metric to compare - 'team_total_points', 'wins', 'podiums'.
-            save_to_file: If True, automatically saves chart to ./f1_charts/
-            filename: Optional filename for saved chart.
-
-        Returns:
-            Chart metadata. If save_to_file=True, includes file_path.
-        """
         if not team_names or len(team_names) < 2:
             return {
                 "success": False,
@@ -199,7 +163,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": f"Invalid metric. Choose from: {', '.join(valid_metrics)}",
             }
 
-        # Build team filter
         team_conditions = " OR ".join(
             f"LOWER(teamName) LIKE LOWER('%{t.replace(chr(39), chr(39)*2)}%')"
             for t in team_names
@@ -209,7 +172,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         if season:
             season_filter = f"AND season = {int(season)}"
         else:
-            # Get latest 5 seasons
             season_filter = "AND season >= (SELECT MAX(season) - 4 FROM f1.f1_gold_constructor_season_stats)"
 
         client = get_databricks_client()
@@ -237,7 +199,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": "No data found for the specified teams.",
             }
 
-        # Organize data by team
         seasons = sorted(set(r.get("season") for r in rows))
         teams_data = {}
 
@@ -247,7 +208,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 teams_data[team] = {}
             teams_data[team][row.get("season")] = float(row.get(metric, 0) or 0)
 
-        # Build series for chart
         chart_series = {}
         for team in teams_data:
             chart_series[team] = [teams_data[team].get(s, 0) for s in seasons]
@@ -255,7 +215,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         chart_service = get_chart_service()
 
         if len(seasons) == 1:
-            # Single season - use grouped bar
             chart_result = chart_service.create_bar_chart(
                 labels=list(teams_data.keys()),
                 values=[teams_data[t].get(seasons[0], 0) for t in teams_data],
@@ -264,7 +223,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 ylabel=metric.replace("_", " ").title(),
             )
         else:
-            # Multiple seasons - use line chart
             chart_result = chart_service.create_line_chart(
                 x_values=seasons,
                 y_series=chart_series,
@@ -273,7 +231,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 ylabel=metric.replace("_", " ").title(),
             )
 
-        # Auto-save if requested
         chart_dict = chart_result.to_dict()
         save_result = _save_chart_if_requested(
             chart_dict["chart_base64"],
@@ -305,16 +262,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         team_name: Optional[str] = None,
         chart_type: str = "box",
     ) -> dict[str, Any]:
-        """Create a chart analyzing pit stop performance.
-
-        Args:
-            season: Optional season filter.
-            team_name: Optional team filter.
-            chart_type: 'box' for distribution, 'scatter' for correlation.
-
-        Returns:
-            Chart as base64-encoded PNG with metadata.
-        """
         client = get_databricks_client()
 
         conditions = ["pit_stop_count > 0", "avg_pit_stop_ms > 0"]
@@ -353,7 +300,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         chart_service = get_chart_service()
 
         if chart_type == "box":
-            # Group by team for box plot
             team_data = {}
             for row in rows:
                 team = row.get("teamName")
@@ -363,7 +309,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 if pit_ms:
                     team_data[team].append(float(pit_ms))
 
-            # Filter to teams with enough data points
             team_data = {k: v for k, v in team_data.items() if len(v) >= 5}
 
             if not team_data:
@@ -372,11 +317,10 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                     "error": "Not enough data for box plot analysis.",
                 }
 
-            # Sort by median pit time
             sorted_teams = sorted(
                 team_data.keys(),
                 key=lambda t: sum(team_data[t]) / len(team_data[t])
-            )[:10]  # Top 10 teams
+            )[:10]
 
             team_data = {t: team_data[t] for t in sorted_teams}
 
@@ -387,7 +331,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 ylabel="Average Pit Stop Time (ms)",
             )
         else:
-            # Scatter plot: pit stop time vs finish position
             x_values = [float(r.get("avg_pit_stop_ms", 0)) for r in rows if r.get("avg_pit_stop_ms")]
             y_values = [float(r.get("race_finish_position", 0)) for r in rows if r.get("avg_pit_stop_ms")]
 
@@ -413,16 +356,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         features: Optional[list[str]] = None,
         season: Optional[int] = None,
     ) -> dict[str, Any]:
-        """Create a correlation heatmap of race performance features.
-
-        Args:
-            features: Optional list of features to include. 
-                     Defaults to key performance features.
-            season: Optional season filter.
-
-        Returns:
-            Heatmap as base64-encoded PNG with metadata.
-        """
         default_features = [
             "grid",
             "race_finish_position",
@@ -458,10 +391,8 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": "No data found for correlation analysis.",
             }
 
-        # Build correlation matrix
         import numpy as np
 
-        # Extract numeric data
         data = {f: [] for f in features}
         for row in rows:
             valid_row = True
@@ -480,7 +411,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": "Not enough valid data for correlation analysis.",
             }
 
-        # Calculate correlation matrix
         n = len(features)
         corr_matrix = [[0.0] * n for _ in range(n)]
 
@@ -494,7 +424,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
 
         chart_service = get_chart_service()
 
-        # Shorten feature names for display
         short_names = [f.replace("_", " ").replace("position", "pos")[:15] for f in features]
 
         chart_result = chart_service.create_heatmap(
@@ -520,18 +449,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         save_to_file: bool = True,
         filename: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Create a chart showing championship standings for a season.
-
-        Args:
-            season: Season year.
-            top_n: Number of top positions to show.
-            entity: 'drivers' or 'constructors'.
-            save_to_file: If True, automatically saves chart to ./f1_charts/
-            filename: Optional filename for saved chart.
-
-        Returns:
-            Chart metadata. If save_to_file=True, includes file_path.
-        """
         client = get_databricks_client()
         top_n = min(top_n, 20)
 
@@ -574,7 +491,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": f"No data found for season {season}.",
             }
 
-        # Extract data
         names = [r.get("name", "") for r in rows]
         points = [float(r.get("points", 0) or 0) for r in rows]
 
@@ -589,7 +505,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             horizontal=True,
         )
 
-        # Auto-save if requested
         chart_dict = chart_result.to_dict()
         save_result = _save_chart_if_requested(
             chart_dict["chart_base64"],
@@ -627,22 +542,8 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         title: Optional[str] = None,
         group_column: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Create a custom chart from any SQL query result.
-
-        Args:
-            query: SQL SELECT query to get the data.
-            x_column: Column name to use for x-axis.
-            y_column: Column name to use for y-axis values.
-            chart_type: 'bar', 'line', 'scatter', or 'horizontal_bar'.
-            title: Optional chart title.
-            group_column: Optional column for grouping (creates multi-series chart).
-
-        Returns:
-            Chart as base64-encoded PNG with metadata.
-        """
         from f1_mcp.utils.validators import get_sql_validator
 
-        # Validate query
         validator = get_sql_validator()
         validation = validator.validate_query(query)
 
@@ -665,7 +566,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 "error": "Query returned no data.",
             }
 
-        # Validate columns exist
         columns = result.get("columns", [])
         if x_column not in columns:
             return {
@@ -682,7 +582,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         auto_title = title or f"{y_column} by {x_column}"
 
         if group_column and group_column in columns:
-            # Multi-series chart
             groups = {}
             x_values = []
 
@@ -696,7 +595,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                     groups[group] = {}
                 groups[group][x_val] = float(row.get(y_column, 0) or 0)
 
-            # Build series
             series = {
                 g: [groups[g].get(x, 0) for x in x_values]
                 for g in groups
@@ -762,40 +660,23 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         filename: Optional[str] = None,
         output_dir: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Save a base64-encoded chart image to a file.
-
-        Use this after generating a chart to save it to disk for viewing.
-
-        Args:
-            chart_base64: The base64-encoded PNG image string from a chart tool.
-            filename: Optional filename (without extension). Auto-generated if not provided.
-            output_dir: Optional output directory. Defaults to ./f1_charts/
-
-        Returns:
-            Dictionary with the saved file path.
-        """
         try:
-            # Determine output directory
             if output_dir:
                 out_path = Path(output_dir)
             else:
                 out_path = CHARTS_OUTPUT_DIR
 
-            # Create directory if it doesn't exist
             out_path.mkdir(parents=True, exist_ok=True)
 
-            # Generate filename if not provided
             if not filename:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"f1_chart_{timestamp}"
 
-            # Ensure .png extension
             if not filename.endswith(".png"):
                 filename = f"{filename}.png"
 
             file_path = out_path / filename
 
-            # Decode and save
             image_data = base64.b64decode(chart_base64)
             with open(file_path, "wb") as f:
                 f.write(image_data)
@@ -815,14 +696,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def open_chart(file_path: str) -> dict[str, Any]:
-        """Open a saved chart file with the system's default image viewer.
-
-        Args:
-            file_path: Path to the chart image file.
-
-        Returns:
-            Status of the open operation.
-        """
         import subprocess
         import sys
 
@@ -834,7 +707,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                     "error": f"File not found: {file_path}",
                 }
 
-            # Open with system default viewer
             if sys.platform == "darwin":  # macOS
                 subprocess.run(["open", str(path)], check=True)
             elif sys.platform == "win32":  # Windows
@@ -855,14 +727,6 @@ def register_visualization_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def list_saved_charts(output_dir: Optional[str] = None) -> dict[str, Any]:
-        """List all saved chart files.
-
-        Args:
-            output_dir: Optional directory to list. Defaults to ~/f1_charts/
-
-        Returns:
-            List of saved chart files with metadata.
-        """
         try:
             if output_dir:
                 out_path = Path(output_dir)

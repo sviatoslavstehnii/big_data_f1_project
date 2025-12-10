@@ -5,22 +5,12 @@ import json
 
 
 class ResultFormatter:
-    """Formatter for query results and tool responses."""
 
     @staticmethod
     def format_query_result(
         result: dict[str, Any],
         max_display_rows: int = 50,
     ) -> str:
-        """Format a query result for display.
-
-        Args:
-            result: Query result dictionary with columns and rows.
-            max_display_rows: Maximum rows to include in formatted output.
-
-        Returns:
-            Formatted string representation of the result.
-        """
         if not result.get("success"):
             error = result.get("error", "Unknown error")
             return f"Query failed: {error}"
@@ -35,7 +25,6 @@ class ResultFormatter:
         if not rows:
             return "Query returned no rows."
 
-        # Build formatted output
         lines = [
             f"Query returned {row_count} row(s)",
             "",
@@ -43,7 +32,6 @@ class ResultFormatter:
             "",
         ]
 
-        # Format rows (limit for display)
         display_rows = rows[:max_display_rows]
         for i, row in enumerate(display_rows, 1):
             row_str = " | ".join(
@@ -59,14 +47,6 @@ class ResultFormatter:
 
     @staticmethod
     def format_table_list(result: dict[str, Any]) -> str:
-        """Format a list of tables for display.
-
-        Args:
-            result: Query result with table information.
-
-        Returns:
-            Formatted string of table names.
-        """
         if not result.get("success"):
             return f"Failed to list tables: {result.get('error')}"
 
@@ -92,15 +72,6 @@ class ResultFormatter:
 
     @staticmethod
     def format_table_schema(table_name: str, result: dict[str, Any]) -> str:
-        """Format table schema for display.
-
-        Args:
-            table_name: Name of the table.
-            result: Query result with column information.
-
-        Returns:
-            Formatted string of column definitions.
-        """
         if not result.get("success"):
             return f"Failed to get schema: {result.get('error')}"
 
@@ -129,15 +100,6 @@ class ResultFormatter:
         result: dict[str, Any],
         max_rows: int = 20,
     ) -> str:
-        """Format query result as a Markdown table.
-
-        Args:
-            result: Query result dictionary.
-            max_rows: Maximum rows to include.
-
-        Returns:
-            Markdown-formatted table string.
-        """
         if not result.get("success"):
             return f"**Error:** {result.get('error')}"
 
@@ -147,11 +109,9 @@ class ResultFormatter:
         if not columns or not rows:
             return "*No data to display*"
 
-        # Header
         header = "| " + " | ".join(columns) + " |"
         separator = "| " + " | ".join(["---"] * len(columns)) + " |"
 
-        # Rows
         data_rows = []
         for row in rows[:max_rows]:
             values = [
@@ -169,14 +129,6 @@ class ResultFormatter:
 
     @staticmethod
     def _format_value(value: Any) -> str:
-        """Format a single value for display.
-
-        Args:
-            value: Value to format.
-
-        Returns:
-            String representation of the value.
-        """
         if value is None:
             return "NULL"
         if isinstance(value, float):
@@ -187,36 +139,18 @@ class ResultFormatter:
 
     @staticmethod
     def to_json(result: dict[str, Any], indent: int = 2) -> str:
-        """Convert result to JSON string.
-
-        Args:
-            result: Result dictionary.
-            indent: JSON indentation level.
-
-        Returns:
-            JSON-formatted string.
-        """
         return json.dumps(result, indent=indent, default=str)
 
     @staticmethod
     def extract_numeric_columns(
         result: dict[str, Any],
     ) -> tuple[list[str], list[dict]]:
-        """Extract numeric column values for charting.
-
-        Args:
-            result: Query result dictionary.
-
-        Returns:
-            Tuple of (column names, row data) for numeric columns.
-        """
         if not result.get("success") or not result.get("rows"):
             return [], []
 
         rows = result["rows"]
         columns = result.get("columns", [])
 
-        # Identify numeric columns by checking first row
         numeric_cols = []
         if rows:
             first_row = rows[0]

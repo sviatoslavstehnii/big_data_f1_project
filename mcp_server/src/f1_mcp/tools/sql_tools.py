@@ -10,36 +10,12 @@ from f1_mcp.utils.formatters import ResultFormatter
 
 
 def register_sql_tools(mcp: FastMCP) -> None:
-    """Register SQL-related tools with the MCP server.
-
-    Args:
-        mcp: The FastMCP server instance.
-    """
-
     @mcp.tool()
     def query_f1_data(
         query: str,
         max_rows: Optional[int] = None,
         format: str = "json",
     ) -> dict[str, Any]:
-        """Execute a read-only SQL query against F1 data in Databricks.
-
-        Use this tool to run SQL queries against the Formula 1 database.
-        Only SELECT queries are allowed for safety.
-
-        Args:
-            query: SQL query to execute. Must start with SELECT, WITH, or SHOW.
-            max_rows: Maximum number of rows to return (default: 1000).
-            format: Output format - 'json', 'markdown', or 'text'.
-
-        Returns:
-            Query results with columns and rows.
-
-        Example queries:
-            - "SELECT * FROM f1.f1_gold_driver_season_stats LIMIT 10"
-            - "SELECT driverName, total_points FROM f1.f1_gold_driver_season_stats WHERE season = 2023"
-        """
-        # Validate the query
         validator = get_sql_validator()
         validation = validator.validate_query(query)
 
@@ -49,11 +25,9 @@ def register_sql_tools(mcp: FastMCP) -> None:
                 "error": validation.error_message,
             }
 
-        # Execute the query
         client = get_databricks_client()
         result = client.execute_query(query, max_rows=max_rows or 1000)
 
-        # Format based on requested format
         if format == "markdown" and result.get("success"):
             result["formatted"] = ResultFormatter.format_as_markdown_table(result)
         elif format == "text" and result.get("success"):
@@ -68,20 +42,6 @@ def register_sql_tools(mcp: FastMCP) -> None:
         team_name: Optional[str] = None,
         limit: int = 50,
     ) -> dict[str, Any]:
-        """Get driver season statistics from the gold layer.
-
-        Retrieves aggregated statistics for F1 drivers including wins,
-        podiums, points, and championship standings.
-
-        Args:
-            driver_name: Optional filter by driver name (partial match).
-            season: Optional filter by season year.
-            team_name: Optional filter by team name (partial match).
-            limit: Maximum rows to return.
-
-        Returns:
-            Driver season statistics.
-        """
         conditions = []
         if driver_name:
             safe_name = driver_name.replace("'", "''")
@@ -124,18 +84,6 @@ def register_sql_tools(mcp: FastMCP) -> None:
         season: Optional[int] = None,
         limit: int = 50,
     ) -> dict[str, Any]:
-        """Get constructor/team season statistics from the gold layer.
-
-        Retrieves aggregated statistics for F1 constructors/teams.
-
-        Args:
-            team_name: Optional filter by team name (partial match).
-            season: Optional filter by season year.
-            limit: Maximum rows to return.
-
-        Returns:
-            Constructor season statistics.
-        """
         conditions = []
         if team_name:
             safe_team = team_name.replace("'", "''")
@@ -174,20 +122,6 @@ def register_sql_tools(mcp: FastMCP) -> None:
         driver_name: Optional[str] = None,
         limit: int = 100,
     ) -> dict[str, Any]:
-        """Get race results with driver features.
-
-        Retrieves detailed race-level data including grid positions,
-        finish positions, pit stops, and lap times.
-
-        Args:
-            race_name: Optional filter by race/circuit name (partial match).
-            season: Optional filter by season year.
-            driver_name: Optional filter by driver name (partial match).
-            limit: Maximum rows to return.
-
-        Returns:
-            Race results with features.
-        """
         conditions = []
         if race_name:
             safe_race = race_name.replace("'", "''")
@@ -233,20 +167,6 @@ def register_sql_tools(mcp: FastMCP) -> None:
         team_name: Optional[str] = None,
         limit: int = 500,
     ) -> dict[str, Any]:
-        """Get pit stop data for analysis.
-
-        Retrieves pit stop information for drivers including duration
-        and stop counts.
-
-        Args:
-            season: Optional filter by season year.
-            driver_name: Optional filter by driver name (partial match).
-            team_name: Optional filter by team name (partial match).
-            limit: Maximum rows to return.
-
-        Returns:
-            Pit stop data for analysis.
-        """
         conditions = []
         if season:
             conditions.append(f"season = {int(season)}")

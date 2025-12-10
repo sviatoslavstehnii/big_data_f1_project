@@ -72,8 +72,6 @@ class ModelService:
         Note:
             This is a placeholder. Replace with actual model inference.
         """
-        # Placeholder logic - would be replaced with actual model
-        # Simple heuristic based on race length
         if race_laps < 40:
             estimated_pits = 1
         elif race_laps < 60:
@@ -88,7 +86,7 @@ class ModelService:
             model_version=self._model_version,
             message=(
                 "PLACEHOLDER: This is a placeholder prediction. "
-                "Integrate your trained ML model here for accurate predictions."
+                "Integration of the model is on the way"
             ),
         )
 
@@ -115,8 +113,7 @@ class ModelService:
         Note:
             This is a placeholder. Replace with actual model inference.
         """
-        # Placeholder values - typical pit stop is 2-3 seconds
-        estimated_avg_ms = 2500.0  # 2.5 seconds
+        estimated_avg_ms = 2500.0
         estimated_total_ms = estimated_avg_ms * pit_stop_number
 
         return PitStopPrediction(
@@ -148,7 +145,6 @@ class ModelService:
         }
 
 
-# Singleton instance
 _model_instance: Optional[ModelService] = None
 
 

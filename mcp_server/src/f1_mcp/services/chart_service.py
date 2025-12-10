@@ -7,13 +7,12 @@ from dataclasses import dataclass
 from enum import Enum
 
 import matplotlib
-matplotlib.use('Agg')  # Non-interactive backend for server use
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 class ChartType(str, Enum):
-    """Supported chart types."""
     BAR = "bar"
     LINE = "line"
     SCATTER = "scatter"
@@ -26,15 +25,13 @@ class ChartType(str, Enum):
 
 @dataclass
 class ChartResult:
-    """Result of chart generation."""
     chart_base64: str
     chart_type: str
     title: str
     description: str
     data_summary: dict[str, Any]
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
+    def to_dict(self) -> dict[str, Any]:    
         return {
             "chart_base64": self.chart_base64,
             "chart_type": self.chart_type,
@@ -45,7 +42,6 @@ class ChartResult:
 
 
 class ChartService:
-    """Service for generating charts from data."""
 
     # F1-inspired color palette
     COLORS = [
@@ -62,24 +58,11 @@ class ChartService:
     ]
 
     def __init__(self, style: str = "seaborn-v0_8-darkgrid"):
-        """Initialize the chart service.
-
-        Args:
-            style: Matplotlib style to use.
-        """
         self._style = style
         self._dpi = 100
         self._figsize = (10, 6)
 
     def _fig_to_base64(self, fig: plt.Figure) -> str:
-        """Convert matplotlib figure to base64 string.
-
-        Args:
-            fig: Matplotlib figure.
-
-        Returns:
-            Base64-encoded PNG string.
-        """
         buf = io.BytesIO()
         fig.savefig(buf, format="png", dpi=self._dpi, bbox_inches="tight")
         buf.seek(0)
@@ -89,14 +72,6 @@ class ChartService:
         return img_base64
 
     def _get_colors(self, n: int) -> list[str]:
-        """Get n colors from the palette.
-
-        Args:
-            n: Number of colors needed.
-
-        Returns:
-            List of color hex codes.
-        """
         if n <= len(self.COLORS):
             return self.COLORS[:n]
         # Cycle colors if more are needed
@@ -112,20 +87,6 @@ class ChartService:
         horizontal: bool = False,
         color: Optional[str] = None,
     ) -> ChartResult:
-        """Create a bar chart.
-
-        Args:
-            labels: Category labels.
-            values: Numeric values for each category.
-            title: Chart title.
-            xlabel: X-axis label.
-            ylabel: Y-axis label.
-            horizontal: If True, create horizontal bar chart.
-            color: Optional bar color.
-
-        Returns:
-            ChartResult with base64 image and metadata.
-        """
         fig, ax = plt.subplots(figsize=self._figsize)
 
         bar_color = color or self.COLORS[0]
@@ -143,7 +104,6 @@ class ChartService:
         ax.set_title(title, fontsize=14, fontweight="bold")
         plt.tight_layout()
 
-        # Generate summary
         summary = {
             "total": sum(values),
             "average": np.mean(values),
@@ -174,18 +134,6 @@ class ChartService:
         xlabel: str = "",
         ylabel: str = "",
     ) -> ChartResult:
-        """Create a line chart with multiple series.
-
-        Args:
-            x_values: X-axis values (e.g., years).
-            y_series: Dict mapping series names to y-values.
-            title: Chart title.
-            xlabel: X-axis label.
-            ylabel: Y-axis label.
-
-        Returns:
-            ChartResult with base64 image and metadata.
-        """
         fig, ax = plt.subplots(figsize=self._figsize)
 
         colors = self._get_colors(len(y_series))
@@ -202,7 +150,6 @@ class ChartService:
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
 
-        # Generate summary
         summary = {
             "series_count": len(y_series),
             "x_range": [str(x_values[0]), str(x_values[-1])] if x_values else [],
@@ -234,18 +181,6 @@ class ChartService:
         xlabel: str = "",
         ylabel: str = "",
     ) -> ChartResult:
-        """Create a grouped bar chart.
-
-        Args:
-            categories: Category labels (x-axis).
-            groups: Dict mapping group names to values per category.
-            title: Chart title.
-            xlabel: X-axis label.
-            ylabel: Y-axis label.
-
-        Returns:
-            ChartResult with base64 image and metadata.
-        """
         fig, ax = plt.subplots(figsize=self._figsize)
 
         x = np.arange(len(categories))
@@ -290,29 +225,14 @@ class ChartService:
         labels: Optional[list[str]] = None,
         size: Optional[list[float]] = None,
     ) -> ChartResult:
-        """Create a scatter plot.
-
-        Args:
-            x_values: X-axis values.
-            y_values: Y-axis values.
-            title: Chart title.
-            xlabel: X-axis label.
-            ylabel: Y-axis label.
-            labels: Optional labels for each point.
-            size: Optional sizes for each point.
-
-        Returns:
-            ChartResult with base64 image and metadata.
-        """
         fig, ax = plt.subplots(figsize=self._figsize)
 
         sizes = size if size else [50] * len(x_values)
         scatter = ax.scatter(x_values, y_values, s=sizes, c=self.COLORS[0], 
                             alpha=0.7, edgecolors="white")
 
-        # Add labels if provided
         if labels:
-            for i, label in enumerate(labels[:10]):  # Limit labels to avoid clutter
+            for i, label in enumerate(labels[:10]):
                 ax.annotate(label, (x_values[i], y_values[i]), 
                            fontsize=8, ha="center", va="bottom")
 
@@ -322,7 +242,6 @@ class ChartService:
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
 
-        # Calculate correlation
         if len(x_values) > 1:
             correlation = np.corrcoef(x_values, y_values)[0, 1]
         else:
@@ -356,28 +275,14 @@ class ChartService:
         title: str,
         cmap: str = "RdYlGn_r",
     ) -> ChartResult:
-        """Create a heatmap.
-
-        Args:
-            data: 2D array of values.
-            x_labels: Labels for x-axis (columns).
-            y_labels: Labels for y-axis (rows).
-            title: Chart title.
-            cmap: Matplotlib colormap name.
-
-        Returns:
-            ChartResult with base64 image and metadata.
-        """
         fig, ax = plt.subplots(figsize=(max(10, len(x_labels) * 0.8), 
                                         max(6, len(y_labels) * 0.5)))
 
         data_array = np.array(data)
         im = ax.imshow(data_array, cmap=cmap, aspect="auto")
 
-        # Add colorbar
         cbar = ax.figure.colorbar(im, ax=ax)
 
-        # Set labels
         ax.set_xticks(np.arange(len(x_labels)))
         ax.set_yticks(np.arange(len(y_labels)))
         ax.set_xticklabels(x_labels, rotation=45, ha="right")
@@ -419,17 +324,6 @@ class ChartService:
         xlabel: str = "",
         ylabel: str = "",
     ) -> ChartResult:
-        """Create a box plot.
-
-        Args:
-            data: Dict mapping category names to lists of values.
-            title: Chart title.
-            xlabel: X-axis label.
-            ylabel: Y-axis label.
-
-        Returns:
-            ChartResult with base64 image and metadata.
-        """
         fig, ax = plt.subplots(figsize=self._figsize)
 
         labels = list(data.keys())
@@ -437,7 +331,6 @@ class ChartService:
 
         bp = ax.boxplot(values, labels=labels, patch_artist=True)
 
-        # Color the boxes
         colors = self._get_colors(len(labels))
         for patch, color in zip(bp["boxes"], colors):
             patch.set_facecolor(color)
@@ -450,7 +343,6 @@ class ChartService:
         ax.grid(True, alpha=0.3, axis="y")
         plt.tight_layout()
 
-        # Calculate statistics
         summary = {
             "categories": len(labels),
             "statistics": {
@@ -477,12 +369,10 @@ class ChartService:
         )
 
 
-# Singleton instance
 _chart_service: Optional[ChartService] = None
 
 
 def get_chart_service() -> ChartService:
-    """Get or create the singleton ChartService instance."""
     global _chart_service
     if _chart_service is None:
         _chart_service = ChartService()

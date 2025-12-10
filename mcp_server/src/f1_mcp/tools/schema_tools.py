@@ -10,12 +10,6 @@ from f1_mcp.config import get_settings
 
 
 def register_schema_tools(mcp: FastMCP) -> None:
-    """Register schema discovery tools with the MCP server.
-
-    Args:
-        mcp: The FastMCP server instance.
-    """
-
     @mcp.tool()
     def list_f1_tables(
         include_bronze: bool = False,
@@ -36,7 +30,6 @@ def register_schema_tools(mcp: FastMCP) -> None:
         """
         client = get_databricks_client()
 
-        # Build layer filter
         layer_conditions = []
         if include_bronze:
             layer_conditions.append("table_name LIKE 'f1_bronze%'")
@@ -68,7 +61,6 @@ def register_schema_tools(mcp: FastMCP) -> None:
         result = client.execute_query(query)
 
         if result.get("success"):
-            # Organize by layer
             tables_by_layer = {
                 "bronze": [],
                 "silver": [],
@@ -90,18 +82,9 @@ def register_schema_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def describe_table(table_name: str) -> dict[str, Any]:
-        """Get the schema (column definitions) for a specific table.
-
-        Args:
-            table_name: Name of the table (e.g., 'f1_gold_driver_season_stats').
-
-        Returns:
-            Dictionary with column names, data types, and descriptions.
-        """
         client = get_databricks_client()
         settings = get_settings()
 
-        # Clean table name (remove catalog/schema prefix if present)
         clean_name = table_name.split(".")[-1]
 
         result = client.get_table_schema(clean_name)
@@ -118,18 +101,6 @@ def register_schema_tools(mcp: FastMCP) -> None:
         table_name: str,
         limit: int = 5,
     ) -> dict[str, Any]:
-        """Get a sample of rows from a table.
-
-        Useful for understanding the data structure and content.
-
-        Args:
-            table_name: Name of the table.
-            limit: Number of sample rows to return (max 20).
-
-        Returns:
-            Sample rows from the table.
-        """
-        # Limit max sample size
         limit = min(limit, 20)
 
         client = get_databricks_client()
@@ -137,16 +108,8 @@ def register_schema_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def get_f1_data_overview() -> dict[str, Any]:
-        """Get an overview of the F1 data available.
-
-        Returns summary statistics and descriptions of the main tables.
-
-        Returns:
-            Overview of available F1 data including row counts.
-        """
         client = get_databricks_client()
 
-        # Get counts for main gold tables
         overview_query = """
         SELECT 
             'driver_season_stats' as table_name,

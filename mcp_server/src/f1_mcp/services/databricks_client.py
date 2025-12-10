@@ -15,17 +15,11 @@ class DatabricksClient:
     """Client for interacting with Databricks SQL warehouse."""
 
     def __init__(self, settings: Optional[Settings] = None):
-        """Initialize the Databricks client.
-
-        Args:
-            settings: Application settings. If None, loads from environment.
-        """
         self._settings = settings or get_settings()
         self._client: Optional[WorkspaceClient] = None
 
     @property
     def client(self) -> WorkspaceClient:
-        """Lazy-load the WorkspaceClient."""
         if self._client is None:
             self._client = WorkspaceClient(
                 host=self._settings.databricks_host,
@@ -38,22 +32,11 @@ class DatabricksClient:
         query: str,
         max_rows: Optional[int] = None,
     ) -> dict[str, Any]:
-        """Execute a SQL query and return results.
-
-        Args:
-            query: SQL query to execute.
-            max_rows: Maximum rows to return. Defaults to settings value.
-
-        Returns:
-            Dictionary with columns, rows, row_count, and success status.
-        """
         max_rows = max_rows or self._settings.max_result_rows
 
         try:
-            # wait_timeout must be 0 (disabled) or between 5-50 seconds
-            # Use 50s max and let the SDK handle longer queries asynchronously
             wait_timeout = min(self._settings.query_timeout_seconds, 50)
-            wait_timeout = max(wait_timeout, 5)  # At least 5 seconds
+            wait_timeout = max(wait_timeout, 5)
             
             statement = self.client.statement_execution.execute_statement(
                 warehouse_id=self._settings.databricks_warehouse_id,
@@ -101,15 +84,6 @@ class DatabricksClient:
         catalog: Optional[str] = None,
         schema: Optional[str] = None,
     ) -> dict[str, Any]:
-        """List all tables in the specified catalog and schema.
-
-        Args:
-            catalog: Catalog name. Defaults to settings value.
-            schema: Schema name. Defaults to settings value.
-
-        Returns:
-            Dictionary with table names and metadata.
-        """
         catalog = catalog or self._settings.databricks_catalog
         schema = schema or self._settings.databricks_schema
 
@@ -127,16 +101,6 @@ class DatabricksClient:
         catalog: Optional[str] = None,
         schema: Optional[str] = None,
     ) -> dict[str, Any]:
-        """Get column information for a specific table.
-
-        Args:
-            table_name: Name of the table.
-            catalog: Catalog name. Defaults to settings value.
-            schema: Schema name. Defaults to settings value.
-
-        Returns:
-            Dictionary with column names, types, and metadata.
-        """
         catalog = catalog or self._settings.databricks_catalog
         schema = schema or self._settings.databricks_schema
 
@@ -159,26 +123,16 @@ class DatabricksClient:
         table_name: str,
         limit: int = 5,
     ) -> dict[str, Any]:
-        """Get a sample of rows from a table.
-
-        Args:
-            table_name: Fully qualified table name or just table name.
-            limit: Number of rows to return.
-
-        Returns:
-            Dictionary with sample data.
-        """
         full_table = self._settings.get_full_table_name(table_name)
         query = f"SELECT * FROM {full_table} LIMIT {limit}"
         return self.execute_query(query)
 
 
-# Singleton instance
 _client_instance: Optional[DatabricksClient] = None
 
 
 def get_databricks_client() -> DatabricksClient:
-    """Get or create the singleton DatabricksClient instance."""
+    """Get or create the DatabricksClient instance."""
     global _client_instance
     if _client_instance is None:
         _client_instance = DatabricksClient()
