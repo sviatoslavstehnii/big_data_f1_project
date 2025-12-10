@@ -1,0 +1,211 @@
+# F1 MCP Server - Test Queries for All 22 Tools
+# Copy-paste these queries to test each tool
+
+================================================================================
+SQL QUERY TOOLS
+================================================================================
+
+### 1. query_f1_data ###
+
+Run this SQL query: SELECT driverName, total_points, wins FROM f1.f1_gold_driver_season_stats WHERE season = 2023 ORDER BY total_points DESC LIMIT 10
+
+Execute SQL: SELECT teamName, COUNT(*) as race_wins FROM f1.f1_gold_race_driver_features WHERE race_finish_position = 1 GROUP BY teamName ORDER BY race_wins DESC
+
+--------------------------------------------------------------------------------
+
+### 2. get_driver_season_stats ###
+
+Get Lewis Hamilton's career statistics
+
+Show me all drivers' stats for the 2023 season
+
+What are Max Verstappen's season-by-season stats?
+
+--------------------------------------------------------------------------------
+
+### 3. get_constructor_season_stats ###
+
+Show me Ferrari's performance history
+
+Get all team statistics for 2023
+
+Get Red Bull Racing's complete history
+
+--------------------------------------------------------------------------------
+
+### 4. get_race_results ###
+
+Show me the results of the Monaco Grand Prix in 2023
+
+Get all of Verstappen's race results from 2023
+
+--------------------------------------------------------------------------------
+
+### 5. get_pit_stop_data ###
+
+Show me Red Bull's pit stop data for 2023
+
+Get all pit stop information for Max Verstappen
+
+================================================================================
+SCHEMA DISCOVERY TOOLS
+================================================================================
+
+### 6. list_f1_tables ###
+
+What tables are available in the F1 database?
+
+Show me all available tables including bronze layer
+
+--------------------------------------------------------------------------------
+
+### 7. describe_table ###
+
+Describe the structure of f1_gold_driver_season_stats table
+
+What columns are in the race driver features table?
+
+--------------------------------------------------------------------------------
+
+### 8. get_table_sample ###
+
+Show me a sample of the driver season stats table
+
+Give me 10 sample rows from the pit stops data
+
+--------------------------------------------------------------------------------
+
+### 9. get_f1_data_overview ###
+
+Give me an overview of the F1 data available
+
+How many records are in each table?
+
+================================================================================
+VISUALIZATION TOOLS
+================================================================================
+
+### 10. chart_driver_performance ###
+
+Create a chart showing Max Verstappen's points by season
+
+Visualize Lewis Hamilton's wins over his career
+
+Show me a bar chart of Fernando Alonso's podiums per season
+
+--------------------------------------------------------------------------------
+
+### 11. chart_team_comparison ###
+
+Compare Ferrari and Red Bull over the last 5 seasons
+
+Create a chart comparing Mercedes, Red Bull, and Ferrari points in 2023
+
+--------------------------------------------------------------------------------
+
+### 12. chart_pit_stop_analysis ###
+
+Show me a box plot of pit stop times by team for 2023
+
+Create a scatter plot of pit stop time vs finish position
+
+--------------------------------------------------------------------------------
+
+### 13. chart_correlation_heatmap ###
+
+Create a correlation heatmap of race performance factors
+
+Show me which features correlate most with finish position
+
+--------------------------------------------------------------------------------
+
+### 14. chart_season_standings ###
+
+Show me the 2023 driver championship standings as a chart
+
+Create a bar chart of constructor standings for 2022
+
+--------------------------------------------------------------------------------
+
+### 15. chart_custom ###
+
+Create a custom bar chart from this query: SELECT teamName, SUM(wins) as total_wins FROM f1.f1_gold_driver_season_stats GROUP BY teamName ORDER BY total_wins DESC LIMIT 10. Use teamName for x-axis and total_wins for y-axis
+
+Generate a scatter plot of qualifying position vs race finish position from the race driver features table
+
+================================================================================
+ML PREDICTION TOOLS
+================================================================================
+
+### 16. predict_pit_stops ###
+
+Predict the optimal number of pit stops for a 60-lap race
+
+What's the expected pit stop duration for Red Bull?
+
+Predict pit stop strategy for Monaco with 78 laps in dry conditions
+
+--------------------------------------------------------------------------------
+
+### 17. get_model_info ###
+
+What ML models are available?
+
+Tell me about the prediction capabilities
+
+--------------------------------------------------------------------------------
+
+### 18. get_historical_pit_stats ###
+
+What are the historical pit stop statistics for Monaco?
+
+Show me Red Bull's pit stop history
+
+--------------------------------------------------------------------------------
+
+### 19. analyze_race_factors ###
+
+Analyze the factors affecting race performance in 2023
+
+What influenced race results at Monaco 2023?
+
+================================================================================
+FILE MANAGEMENT TOOLS
+================================================================================
+
+### 20. save_chart_to_file ###
+
+Save the chart I just created as verstappen_analysis.png
+
+--------------------------------------------------------------------------------
+
+### 21. open_chart ###
+
+Open the last chart I created
+
+Show me the saved chart at ./f1_charts/Max_Verstappen_total_points.png
+
+--------------------------------------------------------------------------------
+
+### 22. list_saved_charts ###
+
+List all saved charts
+
+What charts have I created?
+
+================================================================================
+MULTI-TOOL SCENARIO TESTS
+================================================================================
+
+I want to understand Max Verstappen's dominance - first show me his career stats, then create a chart of his wins by season
+
+Compare the top 3 teams - get their 2023 stats and create a comparison chart
+
+Explore the F1 database - list available tables, then describe the driver season stats table, and show me a sample
+
+Analyze pit stop performance - show me Red Bull's pit stop data, then create a box plot of pit stop times by team
+
+================================================================================
+Total: 22 tools with 40+ test queries
+================================================================================
+
