@@ -5,7 +5,7 @@
         "args": [
           "run",
           "--directory",
-          "/Users/tlysu/Documents/test/big-data-project/mcp_server",
+          "mcp_server",
           "f1-mcp"
         ],
         "env": {

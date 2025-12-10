@@ -12,8 +12,8 @@ from f1_mcp.services.databricks_client import get_databricks_client
 from f1_mcp.services.chart_service import get_chart_service
 
 
-# Default directory for saved charts
-CHARTS_OUTPUT_DIR = Path.home() / "f1_charts"
+# Default directory for saved charts (relative to current working directory)
+CHARTS_OUTPUT_DIR = Path("./f1_charts")
 
 
 def register_visualization_tools(mcp: FastMCP) -> None:
@@ -23,11 +23,48 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         mcp: The FastMCP server instance.
     """
 
+    def _save_chart_if_requested(
+        chart_base64: str,
+        save_to_file: bool,
+        filename: Optional[str] = None,
+    ) -> Optional[dict[str, Any]]:
+        """Helper to save chart to disk if requested."""
+        if not save_to_file:
+            return None
+        
+        try:
+            CHARTS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+            
+            if not filename:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"f1_chart_{timestamp}"
+            
+            if not filename.endswith(".png"):
+                filename = f"{filename}.png"
+            
+            file_path = CHARTS_OUTPUT_DIR / filename
+            image_data = base64.b64decode(chart_base64)
+            
+            with open(file_path, "wb") as f:
+                f.write(image_data)
+            
+            return {
+                "saved": True,
+                "file_path": str(file_path),
+            }
+        except Exception as e:
+            return {
+                "saved": False,
+                "save_error": str(e),
+            }
+
     @mcp.tool()
     def chart_driver_performance(
         driver_name: str,
         metric: str = "total_points",
         chart_type: str = "line",
+        save_to_file: bool = True,
+        filename: Optional[str] = None,
     ) -> dict[str, Any]:
         """Create a chart showing driver performance over seasons.
 
@@ -36,9 +73,11 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             metric: Metric to chart - 'total_points', 'wins', 'podiums', 
                    'avg_finish_position', 'dnf_count'.
             chart_type: 'line' or 'bar'.
+            save_to_file: If True, automatically saves chart to ./f1_charts/
+            filename: Optional filename for saved chart.
 
         Returns:
-            Chart as base64-encoded PNG with metadata.
+            Chart metadata. If save_to_file=True, includes file_path.
         """
         valid_metrics = [
             "total_points", "wins", "podiums", 
@@ -100,19 +139,40 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 ylabel=metric.replace("_", " ").title(),
             )
 
-        return {
+        # Auto-save if requested
+        chart_dict = chart_result.to_dict()
+        save_result = _save_chart_if_requested(
+            chart_dict["chart_base64"],
+            save_to_file,
+            filename or f"{actual_driver_name.replace(' ', '_')}_{metric}",
+        )
+        
+        # Don't return base64 if saved (too large for context)
+        response = {
             "success": True,
             "driver": actual_driver_name,
             "metric": metric,
             "seasons_covered": [min(seasons), max(seasons)],
-            **chart_result.to_dict(),
+            "chart_type": chart_dict["chart_type"],
+            "title": chart_dict["title"],
+            "description": chart_dict["description"],
+            "data_summary": chart_dict["data_summary"],
         }
+        
+        if save_result:
+            response.update(save_result)
+        else:
+            response["chart_base64"] = chart_dict["chart_base64"]
+        
+        return response
 
     @mcp.tool()
     def chart_team_comparison(
         team_names: list[str],
         season: Optional[int] = None,
         metric: str = "team_total_points",
+        save_to_file: bool = True,
+        filename: Optional[str] = None,
     ) -> dict[str, Any]:
         """Create a chart comparing multiple teams.
 
@@ -120,9 +180,11 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             team_names: List of team names to compare.
             season: Optional specific season (if None, shows latest 5 seasons).
             metric: Metric to compare - 'team_total_points', 'wins', 'podiums'.
+            save_to_file: If True, automatically saves chart to ./f1_charts/
+            filename: Optional filename for saved chart.
 
         Returns:
-            Chart as base64-encoded PNG with metadata.
+            Chart metadata. If save_to_file=True, includes file_path.
         """
         if not team_names or len(team_names) < 2:
             return {
@@ -211,13 +273,31 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 ylabel=metric.replace("_", " ").title(),
             )
 
-        return {
+        # Auto-save if requested
+        chart_dict = chart_result.to_dict()
+        save_result = _save_chart_if_requested(
+            chart_dict["chart_base64"],
+            save_to_file,
+            filename or f"team_comparison_{metric}",
+        )
+        
+        response = {
             "success": True,
             "teams": list(teams_data.keys()),
             "metric": metric,
             "seasons": seasons,
-            **chart_result.to_dict(),
+            "chart_type": chart_dict["chart_type"],
+            "title": chart_dict["title"],
+            "description": chart_dict["description"],
+            "data_summary": chart_dict["data_summary"],
         }
+        
+        if save_result:
+            response.update(save_result)
+        else:
+            response["chart_base64"] = chart_dict["chart_base64"]
+        
+        return response
 
     @mcp.tool()
     def chart_pit_stop_analysis(
@@ -437,6 +517,8 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         season: int,
         top_n: int = 10,
         entity: str = "drivers",
+        save_to_file: bool = True,
+        filename: Optional[str] = None,
     ) -> dict[str, Any]:
         """Create a chart showing championship standings for a season.
 
@@ -444,9 +526,11 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             season: Season year.
             top_n: Number of top positions to show.
             entity: 'drivers' or 'constructors'.
+            save_to_file: If True, automatically saves chart to ./f1_charts/
+            filename: Optional filename for saved chart.
 
         Returns:
-            Chart as base64-encoded PNG with metadata.
+            Chart metadata. If save_to_file=True, includes file_path.
         """
         client = get_databricks_client()
         top_n = min(top_n, 20)
@@ -505,7 +589,15 @@ def register_visualization_tools(mcp: FastMCP) -> None:
             horizontal=True,
         )
 
-        return {
+        # Auto-save if requested
+        chart_dict = chart_result.to_dict()
+        save_result = _save_chart_if_requested(
+            chart_dict["chart_base64"],
+            save_to_file,
+            filename or f"{season}_{entity}_standings",
+        )
+        
+        response = {
             "success": True,
             "season": season,
             "entity": entity,
@@ -513,8 +605,18 @@ def register_visualization_tools(mcp: FastMCP) -> None:
                 {"name": r.get("name"), "points": r.get("points"), "wins": r.get("wins")}
                 for r in rows
             ],
-            **chart_result.to_dict(),
+            "chart_type": chart_dict["chart_type"],
+            "title": chart_dict["title"],
+            "description": chart_dict["description"],
+            "data_summary": chart_dict["data_summary"],
         }
+        
+        if save_result:
+            response.update(save_result)
+        else:
+            response["chart_base64"] = chart_dict["chart_base64"]
+        
+        return response
 
     @mcp.tool()
     def chart_custom(
@@ -667,7 +769,7 @@ def register_visualization_tools(mcp: FastMCP) -> None:
         Args:
             chart_base64: The base64-encoded PNG image string from a chart tool.
             filename: Optional filename (without extension). Auto-generated if not provided.
-            output_dir: Optional output directory. Defaults to ~/f1_charts/
+            output_dir: Optional output directory. Defaults to ./f1_charts/
 
         Returns:
             Dictionary with the saved file path.
