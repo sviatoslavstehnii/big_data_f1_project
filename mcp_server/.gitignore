@@ -1,0 +1,22 @@
+# Environment and secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Charts output
+f1_charts/
+
+# Testing
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+
+# UV
+uv.lock
